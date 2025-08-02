@@ -204,9 +204,9 @@ async function sendWelcomeEmail(email) {
     try {
         console.log('🔄 Attempting to send welcome email to:', email);
         
-        // Replace these with your actual EmailJS service and template IDs
+        // EmailJS template uses {{email}} parameter (not to_email)
         const templateParams = {
-            to_email: email,
+            email: email,  // This matches your template's {{email}} field
             to_name: email.split('@')[0], // Use email prefix as name
             from_name: "Surya's News Blog",
             message: "Welcome to our newsletter! You'll now receive the latest news updates directly in your inbox.",
@@ -232,8 +232,61 @@ async function sendWelcomeEmail(email) {
             status: error.status,
             text: error.text
         });
+        
+        // Additional debugging for EmailJS errors
+        if (error.status === 422) {
+            console.error('🚨 422 Error - This usually means:');
+            console.error('   1. Template "To" field is not configured with {{to_email}}');
+            console.error('   2. Template parameter name mismatch');
+            console.error('   3. Template is not properly saved');
+            console.error('   Please check your EmailJS template configuration!');
+        }
+        
         return false;
     }
+}
+
+// Test function to try different parameter names
+async function testEmailJSParameters(testEmail = 'studysurya583@gmail.com') {
+    console.log('🧪 Testing different EmailJS parameter names...');
+    
+    const parameterSets = [
+        { name: 'to_email', params: { to_email: testEmail, to_name: testEmail.split('@')[0], from_name: "Surya's News Blog", message: "Test message", subject: "Test Subject" } },
+        { name: 'email', params: { email: testEmail, to_name: testEmail.split('@')[0], from_name: "Surya's News Blog", message: "Test message", subject: "Test Subject" } },
+        { name: 'recipient_email', params: { recipient_email: testEmail, to_name: testEmail.split('@')[0], from_name: "Surya's News Blog", message: "Test message", subject: "Test Subject" } },
+        { name: 'user_email', params: { user_email: testEmail, to_name: testEmail.split('@')[0], from_name: "Surya's News Blog", message: "Test message", subject: "Test Subject" } }
+    ];
+    
+    for (const paramSet of parameterSets) {
+        try {
+            console.log(`\n🔄 Testing parameter name: ${paramSet.name}`);
+            console.log('📧 Parameters:', paramSet.params);
+            
+            const result = await emailjs.send(
+                'service_d77q2g8',
+                'template_yeq6rnh',
+                paramSet.params
+            );
+            
+            console.log(`✅ SUCCESS with parameter: ${paramSet.name}`);
+            console.log('📨 Response:', result);
+            return paramSet.name; // Return the working parameter name
+            
+        } catch (error) {
+            console.log(`❌ FAILED with parameter: ${paramSet.name}`);
+            console.log('Error:', error.text || error.message);
+        }
+    }
+    
+    console.log('\n❌ All parameter names failed. Please check your EmailJS template configuration.');
+    return null;
+}
+
+// Quick test function you can run in browser console
+function quickTest() {
+    console.log('🚀 Quick EmailJS Test');
+    console.log('Run this in your browser console: testEmailJSParameters()');
+    console.log('This will test different parameter names to find the correct one.');
 }
 
 // Send Newsletter to All Subscribers
@@ -251,7 +304,7 @@ async function sendNewsletterToSubscribers(newsletterContent) {
         for (const subscriber of subscribers) {
             try {
                 const templateParams = {
-                    to_email: subscriber.email,
+                    email: subscriber.email,  // Changed to match template's {{email}} field
                     to_name: subscriber.email.split('@')[0],
                     from_name: "Surya's News Blog",
                     subject: "Latest News from Surya's Blog",
