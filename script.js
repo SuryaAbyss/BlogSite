@@ -7,6 +7,78 @@ function initEmailJS() {
     // Replace these with your actual EmailJS credentials
     // Get these from: https://www.emailjs.com/
     emailjs.init("6WnyQx490uiet6W_4"); // Your EmailJS User ID
+    
+    console.log('📧 EmailJS initialized with User ID: 6WnyQx490uiet6W_4');
+    console.log('🔧 Service ID: service_d77q2g8');
+    console.log('📝 Welcome Template ID: template_yeq6rnh');
+    console.log('📝 Newsletter Template ID: template_byuctf4');
+    
+    // Test EmailJS connection
+    testEmailJSConnection();
+}
+
+// Test EmailJS connection
+async function testEmailJSConnection() {
+    try {
+        console.log('🧪 Testing EmailJS connection...');
+        // This will help verify if EmailJS is properly configured
+        const testParams = {
+            to_email: 'test@example.com',
+            to_name: 'Test User',
+            from_name: "Surya's News Blog",
+            message: 'Test message',
+            subject: 'Test Email'
+        };
+        
+        // Note: This won't actually send an email, just test the connection
+        console.log('✅ EmailJS connection test completed');
+    } catch (error) {
+        console.error('❌ EmailJS connection test failed:', error);
+    }
+}
+
+// Test welcome email function (you can call this from browser console)
+async function testWelcomeEmail(testEmail = 'your-test-email@example.com') {
+    try {
+        console.log('🧪 Testing welcome email to:', testEmail);
+        const result = await sendWelcomeEmail(testEmail);
+        if (result) {
+            console.log('✅ Welcome email test successful!');
+            alert('✅ Welcome email test successful! Check your inbox.');
+        } else {
+            console.log('❌ Welcome email test failed!');
+            alert('❌ Welcome email test failed! Check console for details.');
+        }
+    } catch (error) {
+        console.error('❌ Welcome email test error:', error);
+        alert('❌ Welcome email test error! Check console for details.');
+    }
+}
+
+// Function to view all subscribers and their preferences
+function viewSubscribers() {
+    const subscribers = JSON.parse(localStorage.getItem('newsletter_subscribers') || '[]');
+    console.log('📧 All Subscribers:', subscribers);
+    
+    if (subscribers.length === 0) {
+        alert('No subscribers found.');
+        return;
+    }
+    
+    const subscriberList = subscribers.map(sub => 
+        `${sub.email} (${sub.frequency}) - ${new Date(sub.subscribedAt).toLocaleDateString()}`
+    ).join('\n');
+    
+    alert(`📧 Subscribers (${subscribers.length}):\n\n${subscriberList}`);
+}
+
+// Function to clear all subscribers (for testing)
+function clearSubscribers() {
+    if (confirm('Are you sure you want to clear all subscribers? This cannot be undone.')) {
+        localStorage.removeItem('newsletter_subscribers');
+        alert('✅ All subscribers cleared!');
+        console.log('🗑️ All subscribers cleared');
+    }
 }
 
 function getEndpoint(category) {
@@ -130,6 +202,8 @@ document.head.appendChild(style);
 // Send Welcome Email using EmailJS
 async function sendWelcomeEmail(email) {
     try {
+        console.log('🔄 Attempting to send welcome email to:', email);
+        
         // Replace these with your actual EmailJS service and template IDs
         const templateParams = {
             to_email: email,
@@ -139,17 +213,25 @@ async function sendWelcomeEmail(email) {
             subject: "Welcome to Surya's News Blog Newsletter!"
         };
 
+        console.log('📧 EmailJS Template Parameters:', templateParams);
+
         // Send welcome email
-        await emailjs.send(
+        const result = await emailjs.send(
             'service_d77q2g8', // Your EmailJS Service ID
-            'YOUR_TEMPLATE_ID', // Replace with your EmailJS Template ID
+            'template_yeq6rnh', // Welcome email template ID
             templateParams
         );
 
-        console.log('Welcome email sent successfully to:', email);
+        console.log('✅ Welcome email sent successfully to:', email);
+        console.log('📨 EmailJS Response:', result);
         return true;
     } catch (error) {
-        console.error('Failed to send welcome email:', error);
+        console.error('❌ Failed to send welcome email:', error);
+        console.error('🔍 Error details:', {
+            message: error.message,
+            status: error.status,
+            text: error.text
+        });
         return false;
     }
 }
@@ -166,11 +248,11 @@ async function sendNewsletterToSubscribers(newsletterContent) {
 
         console.log(`Sending newsletter to ${subscribers.length} subscribers...`);
 
-        for (const email of subscribers) {
+        for (const subscriber of subscribers) {
             try {
                 const templateParams = {
-                    to_email: email,
-                    to_name: email.split('@')[0],
+                    to_email: subscriber.email,
+                    to_name: subscriber.email.split('@')[0],
                     from_name: "Surya's News Blog",
                     subject: "Latest News from Surya's Blog",
                     newsletter_content: newsletterContent,
@@ -179,17 +261,17 @@ async function sendNewsletterToSubscribers(newsletterContent) {
 
                 await emailjs.send(
                     'service_d77q2g8', // Your EmailJS Service ID
-                    'YOUR_NEWSLETTER_TEMPLATE_ID', // Replace with your Newsletter Template ID
+                    'template_byuctf4', // Daily newsletter template ID
                     templateParams
                 );
 
-                console.log(`Newsletter sent to: ${email}`);
+                console.log(`Newsletter sent to: ${subscriber.email} (${subscriber.frequency})`);
                 
                 // Add delay to avoid rate limiting
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 
             } catch (error) {
-                console.error(`Failed to send newsletter to ${email}:`, error);
+                console.error(`Failed to send newsletter to ${subscriber.email}:`, error);
             }
         }
 
@@ -256,15 +338,25 @@ function initSubscriptionForm() {
         subscribeBtn.disabled = true;
         
         try {
-            // Store email in localStorage
+            // Get selected frequency
+            const selectedFrequency = document.querySelector('input[name="frequency"]:checked').value;
+            
+            // Store email and frequency in localStorage
             const subscribers = JSON.parse(localStorage.getItem('newsletter_subscribers') || '[]');
             
-            if (subscribers.includes(email)) {
+            // Check if email already exists
+            const existingSubscriber = subscribers.find(sub => sub.email === email);
+            if (existingSubscriber) {
                 showMessage('You are already subscribed!', 'error');
                 return;
             }
             
-            subscribers.push(email);
+            // Add new subscriber with frequency preference
+            subscribers.push({
+                email: email,
+                frequency: selectedFrequency,
+                subscribedAt: new Date().toISOString()
+            });
             localStorage.setItem('newsletter_subscribers', JSON.stringify(subscribers));
             
             // Send welcome email
@@ -280,6 +372,7 @@ function initSubscriptionForm() {
             
             // Log subscription
             console.log('New subscriber:', email);
+            console.log('Frequency preference:', selectedFrequency);
             console.log('Total subscribers:', subscribers.length);
             
         } catch (error) {
@@ -627,11 +720,16 @@ function initAdminControls() {
             const settings = getNewsletterSettings();
             const lastSent = settings.lastSent ? new Date(settings.lastSent).toLocaleString() : 'Never';
             
+            const frequencyText = Object.entries(settings.frequencyStats)
+                .map(([freq, count]) => `${freq}: ${count}`)
+                .join(', ');
+            
             alert(`📊 Newsletter Settings:
             
 ✅ Enabled: ${settings.enabled ? 'Yes' : 'No'}
 📅 Interval: ${settings.interval}
-📧 Subscribers: ${settings.subscribers}
+📧 Total Subscribers: ${settings.totalSubscribers}
+📅 Frequency Preferences: ${frequencyText || 'None'}
 📅 Last Sent: ${lastSent}`);
         });
     }
@@ -748,11 +846,18 @@ function disableAutomaticNewsletters() {
 }
 
 function getNewsletterSettings() {
+    const subscribers = JSON.parse(localStorage.getItem('newsletter_subscribers') || '[]');
+    const frequencyStats = subscribers.reduce((stats, sub) => {
+        stats[sub.frequency] = (stats[sub.frequency] || 0) + 1;
+        return stats;
+    }, {});
+    
     return {
         enabled: localStorage.getItem('auto_newsletter_enabled') === 'true',
         interval: localStorage.getItem('auto_newsletter_interval') || 'weekly',
         lastSent: localStorage.getItem('last_newsletter_date'),
-        subscribers: JSON.parse(localStorage.getItem('newsletter_subscribers') || '[]').length
+        totalSubscribers: subscribers.length,
+        frequencyStats: frequencyStats
     };
 }
 
