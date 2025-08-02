@@ -45,6 +45,49 @@ h1 {
   font-size: 1.1rem;
 }
 
+/* Category Navigation Styles */
+.category-nav {
+  background: var(--card-bg);
+  border-bottom: 1px solid #333;
+  padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.category-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.category-btn {
+  background: transparent;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  padding: 0.6rem 1.2rem;
+  border-radius: 2rem;
+  cursor: pointer;
+  font-family: 'Inter', Arial, sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  text-transform: capitalize;
+}
+
+.category-btn:hover {
+  background: var(--accent);
+  color: var(--bg);
+  transform: translateY(-2px);
+}
+
+.category-btn.active {
+  background: var(--accent);
+  color: var(--bg);
+  box-shadow: 0 4px 12px rgba(79, 209, 197, 0.3);
+}
+
 #news-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
@@ -124,5 +167,12 @@ footer {
   }
   .news-image {
     height: 120px;
+  }
+  .category-buttons {
+    gap: 0.3rem;
+  }
+  .category-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
   }
 } 
