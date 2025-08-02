@@ -72,6 +72,38 @@
                                 <span class="btn-icon">📧</span>
                             </button>
                         </div>
+                        
+                        <!-- Newsletter Frequency Selection -->
+                        <div class="frequency-selection">
+                            <label class="frequency-label">📅 How often would you like to receive news?</label>
+                            <div class="frequency-options">
+                                <label class="frequency-option">
+                                    <input type="radio" name="frequency" value="daily" checked>
+                                    <span class="option-text">
+                                        <span class="option-icon">📅</span>
+                                        <span class="option-label">Daily</span>
+                                        <span class="option-desc">Get news every day</span>
+                                    </span>
+                                </label>
+                                <label class="frequency-option">
+                                    <input type="radio" name="frequency" value="weekly">
+                                    <span class="option-text">
+                                        <span class="option-icon">📅</span>
+                                        <span class="option-label">Weekly</span>
+                                        <span class="option-desc">Get news every week</span>
+                                    </span>
+                                </label>
+                                <label class="frequency-option">
+                                    <input type="radio" name="frequency" value="monthly">
+                                    <span class="option-text">
+                                        <span class="option-icon">📅</span>
+                                        <span class="option-label">Monthly</span>
+                                        <span class="option-desc">Get news every month</span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                        
                         <div class="form-message" id="formMessage"></div>
                     </form>
                     <p class="privacy-note">We respect your privacy. Unsubscribe at any time.</p>
@@ -88,11 +120,11 @@
                     <h3 class="glitch-text">News Blog</h3>
                     <p>&copy; 2024 Modern News Blog. Powered by NewsAPI.org</p>
                     <!-- Admin Newsletter Button (for testing) -->
-                    <button id="sendNewsletterBtn" class="admin-btn" style="display: none;">
+                    <button id="sendNewsletterBtn" class="admin-btn">
                         📧 Send Newsletter to All Subscribers
                     </button>
                     <!-- Admin Controls for Automatic Newsletters -->
-                    <div class="admin-controls" style="display: none;">
+                    <div class="admin-controls">
                         <h4>Newsletter Settings</h4>
                         <button id="enableDailyBtn" class="admin-btn-small">📅 Enable Daily</button>
                         <button id="enableWeeklyBtn" class="admin-btn-small">📅 Enable Weekly</button>
