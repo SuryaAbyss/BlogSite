@@ -2,6 +2,13 @@ const API_KEY = '60d5df70a6d768be30695e939e2c581b';
 let currentCategory = 'general';
 const newsList = document.getElementById('news-list');
 
+// Initialize EmailJS (you'll need to replace these with your actual EmailJS credentials)
+function initEmailJS() {
+    // Replace these with your actual EmailJS credentials
+    // Get these from: https://www.emailjs.com/
+    emailjs.init("6WnyQx490uiet6W_4"); // Your EmailJS User ID
+}
+
 function getEndpoint(category) {
     return `https://gnews.io/api/v4/top-headlines?category=${category}&lang=en&country=us&max=10&apikey=${API_KEY}`;
 }
@@ -40,7 +47,7 @@ function initCustomCursor() {
     animateCursor();
     
     // Cursor effects on hover
-    const interactiveElements = document.querySelectorAll('.category-btn, .news-card, .social-link, .news-title');
+    const interactiveElements = document.querySelectorAll('.category-btn, .news-card, .social-link, .news-title, .subscribe-btn, #emailInput, .admin-btn');
     
     interactiveElements.forEach(el => {
         el.addEventListener('mouseenter', () => {
@@ -73,7 +80,7 @@ function initGlitchEffect() {
 
 // Ripple Effect for Buttons
 function addRippleEffect() {
-    const buttons = document.querySelectorAll('.category-btn, .social-link');
+    const buttons = document.querySelectorAll('.category-btn, .social-link, .subscribe-btn, .admin-btn');
     
     buttons.forEach(button => {
         button.addEventListener('click', function(e) {
@@ -119,6 +126,216 @@ const rippleCSS = `
 const style = document.createElement('style');
 style.textContent = rippleCSS;
 document.head.appendChild(style);
+
+// Send Welcome Email using EmailJS
+async function sendWelcomeEmail(email) {
+    try {
+        // Replace these with your actual EmailJS service and template IDs
+        const templateParams = {
+            to_email: email,
+            to_name: email.split('@')[0], // Use email prefix as name
+            from_name: "Surya's News Blog",
+            message: "Welcome to our newsletter! You'll now receive the latest news updates directly in your inbox.",
+            subject: "Welcome to Surya's News Blog Newsletter!"
+        };
+
+        // Send welcome email
+        await emailjs.send(
+            'service_d77q2g8', // Your EmailJS Service ID
+            'YOUR_TEMPLATE_ID', // Replace with your EmailJS Template ID
+            templateParams
+        );
+
+        console.log('Welcome email sent successfully to:', email);
+        return true;
+    } catch (error) {
+        console.error('Failed to send welcome email:', error);
+        return false;
+    }
+}
+
+// Send Newsletter to All Subscribers
+async function sendNewsletterToSubscribers(newsletterContent) {
+    try {
+        const subscribers = JSON.parse(localStorage.getItem('newsletter_subscribers') || '[]');
+        
+        if (subscribers.length === 0) {
+            console.log('No subscribers to send newsletter to');
+            return;
+        }
+
+        console.log(`Sending newsletter to ${subscribers.length} subscribers...`);
+
+        for (const email of subscribers) {
+            try {
+                const templateParams = {
+                    to_email: email,
+                    to_name: email.split('@')[0],
+                    from_name: "Surya's News Blog",
+                    subject: "Latest News from Surya's Blog",
+                    newsletter_content: newsletterContent,
+                    unsubscribe_link: `mailto:your-email@domain.com?subject=Unsubscribe&body=Please unsubscribe me from the newsletter.`
+                };
+
+                await emailjs.send(
+                    'service_d77q2g8', // Your EmailJS Service ID
+                    'YOUR_NEWSLETTER_TEMPLATE_ID', // Replace with your Newsletter Template ID
+                    templateParams
+                );
+
+                console.log(`Newsletter sent to: ${email}`);
+                
+                // Add delay to avoid rate limiting
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+            } catch (error) {
+                console.error(`Failed to send newsletter to ${email}:`, error);
+            }
+        }
+
+        console.log('Newsletter sending completed!');
+    } catch (error) {
+        console.error('Newsletter sending failed:', error);
+    }
+}
+
+// Subscription Form Handling
+function initSubscriptionForm() {
+    const form = document.getElementById('subscribeForm');
+    const emailInput = document.getElementById('emailInput');
+    const formMessage = document.getElementById('formMessage');
+    const subscribeBtn = document.querySelector('.subscribe-btn');
+    
+    if (!form || !emailInput || !formMessage) return;
+    
+    // Email validation
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+    
+    // Show message function
+    function showMessage(message, type) {
+        formMessage.textContent = message;
+        formMessage.className = `form-message ${type}`;
+        
+        // Auto-hide success messages after 5 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                formMessage.textContent = '';
+                formMessage.className = 'form-message';
+            }, 5000);
+        }
+    }
+    
+    // Form submission
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const email = emailInput.value.trim();
+        
+        // Validate email
+        if (!email) {
+            showMessage('Please enter your email address', 'error');
+            emailInput.focus();
+            return;
+        }
+        
+        if (!isValidEmail(email)) {
+            showMessage('Please enter a valid email address', 'error');
+            emailInput.focus();
+            return;
+        }
+        
+        // Show loading state
+        const originalText = subscribeBtn.querySelector('.btn-text').textContent;
+        const originalIcon = subscribeBtn.querySelector('.btn-icon').textContent;
+        
+        subscribeBtn.querySelector('.btn-text').textContent = 'Subscribing...';
+        subscribeBtn.querySelector('.btn-icon').textContent = '⏳';
+        subscribeBtn.disabled = true;
+        
+        try {
+            // Store email in localStorage
+            const subscribers = JSON.parse(localStorage.getItem('newsletter_subscribers') || '[]');
+            
+            if (subscribers.includes(email)) {
+                showMessage('You are already subscribed!', 'error');
+                return;
+            }
+            
+            subscribers.push(email);
+            localStorage.setItem('newsletter_subscribers', JSON.stringify(subscribers));
+            
+            // Send welcome email
+            const emailSent = await sendWelcomeEmail(email);
+            
+            if (emailSent) {
+                showMessage('🎉 Successfully subscribed! Welcome email sent to your inbox.', 'success');
+            } else {
+                showMessage('✅ Subscribed! Welcome email will be sent shortly.', 'success');
+            }
+            
+            emailInput.value = '';
+            
+            // Log subscription
+            console.log('New subscriber:', email);
+            console.log('Total subscribers:', subscribers.length);
+            
+        } catch (error) {
+            showMessage('❌ Something went wrong. Please try again.', 'error');
+            console.error('Subscription error:', error);
+        } finally {
+            // Reset button state
+            subscribeBtn.querySelector('.btn-text').textContent = originalText;
+            subscribeBtn.querySelector('.btn-icon').textContent = originalIcon;
+            subscribeBtn.disabled = false;
+        }
+    });
+    
+    // Real-time validation
+    emailInput.addEventListener('input', function() {
+        const email = this.value.trim();
+        
+        if (email && !isValidEmail(email)) {
+            this.style.borderColor = '#f87171';
+        } else {
+            this.style.borderColor = '';
+        }
+        
+        // Clear message when user starts typing
+        if (formMessage.textContent) {
+            formMessage.textContent = '';
+            formMessage.className = 'form-message';
+        }
+    });
+    
+    // Focus effects
+    emailInput.addEventListener('focus', function() {
+        this.parentElement.style.transform = 'scale(1.02)';
+    });
+    
+    emailInput.addEventListener('blur', function() {
+        this.parentElement.style.transform = 'scale(1)';
+    });
+}
+
+// Function to manually send newsletter (you can call this from console or add a button)
+function sendNewsletter() {
+    const newsletterContent = `
+        <h2>Latest News from Surya's Blog</h2>
+        <p>Here are the latest headlines from our blog:</p>
+        <ul>
+            <li>Breaking news and updates</li>
+            <li>Technology trends</li>
+            <li>Business insights</li>
+            <li>Entertainment highlights</li>
+        </ul>
+        <p>Stay tuned for more updates!</p>
+    `;
+    
+    sendNewsletterToSubscribers(newsletterContent);
+}
 
 function createNewsCard(article) {
     const card = document.createElement('div');
@@ -326,13 +543,217 @@ function addImageLoadingEffects() {
 
 // Initialize all advanced features
 function initAdvancedFeatures() {
+    initEmailJS(); // Initialize EmailJS
     initCustomCursor();
     initGlitchEffect();
     addRippleEffect();
+    initSubscriptionForm();
     addSmoothScroll();
     addHoverEffects();
     addKeyboardNavigation();
     addImageLoadingEffects();
+    initAdminButton(); // Initialize admin newsletter button
+    initAutomaticNewsletters(); // Initialize automatic newsletter scheduling
+}
+
+// Initialize Admin Newsletter Button
+function initAdminButton() {
+    const adminBtn = document.getElementById('sendNewsletterBtn');
+    if (!adminBtn) return;
+    
+    adminBtn.addEventListener('click', async function() {
+        const originalText = this.textContent;
+        this.textContent = '📧 Sending Newsletter...';
+        this.disabled = true;
+        
+        try {
+            await sendNewsletter();
+            alert('✅ Newsletter sent successfully to all subscribers!');
+        } catch (error) {
+            alert('❌ Failed to send newsletter. Check console for details.');
+            console.error('Newsletter sending error:', error);
+        } finally {
+            this.textContent = originalText;
+            this.disabled = false;
+        }
+    });
+    
+    // Initialize admin controls for automatic newsletters
+    initAdminControls();
+}
+
+// Initialize Admin Controls for Automatic Newsletters
+function initAdminControls() {
+    // Enable Daily Newsletters
+    const enableDailyBtn = document.getElementById('enableDailyBtn');
+    if (enableDailyBtn) {
+        enableDailyBtn.addEventListener('click', () => {
+            enableAutomaticNewsletters('daily');
+            alert('✅ Daily automatic newsletters enabled!');
+        });
+    }
+    
+    // Enable Weekly Newsletters
+    const enableWeeklyBtn = document.getElementById('enableWeeklyBtn');
+    if (enableWeeklyBtn) {
+        enableWeeklyBtn.addEventListener('click', () => {
+            enableAutomaticNewsletters('weekly');
+            alert('✅ Weekly automatic newsletters enabled!');
+        });
+    }
+    
+    // Enable Monthly Newsletters
+    const enableMonthlyBtn = document.getElementById('enableMonthlyBtn');
+    if (enableMonthlyBtn) {
+        enableMonthlyBtn.addEventListener('click', () => {
+            enableAutomaticNewsletters('monthly');
+            alert('✅ Monthly automatic newsletters enabled!');
+        });
+    }
+    
+    // Disable Automatic Newsletters
+    const disableAutoBtn = document.getElementById('disableAutoBtn');
+    if (disableAutoBtn) {
+        disableAutoBtn.addEventListener('click', () => {
+            disableAutomaticNewsletters();
+            alert('❌ Automatic newsletters disabled!');
+        });
+    }
+    
+    // Check Newsletter Settings
+    const checkSettingsBtn = document.getElementById('checkSettingsBtn');
+    if (checkSettingsBtn) {
+        checkSettingsBtn.addEventListener('click', () => {
+            const settings = getNewsletterSettings();
+            const lastSent = settings.lastSent ? new Date(settings.lastSent).toLocaleString() : 'Never';
+            
+            alert(`📊 Newsletter Settings:
+            
+✅ Enabled: ${settings.enabled ? 'Yes' : 'No'}
+📅 Interval: ${settings.interval}
+📧 Subscribers: ${settings.subscribers}
+📅 Last Sent: ${lastSent}`);
+        });
+    }
+}
+
+// Automatic Newsletter Scheduling
+function initAutomaticNewsletters() {
+    // Check if automatic newsletters are enabled
+    const autoNewsletterEnabled = localStorage.getItem('auto_newsletter_enabled') === 'true';
+    const autoNewsletterInterval = localStorage.getItem('auto_newsletter_interval') || 'weekly'; // daily, weekly, monthly
+    
+    if (!autoNewsletterEnabled) return;
+    
+    // Get last newsletter sent date
+    const lastNewsletterDate = localStorage.getItem('last_newsletter_date');
+    const now = new Date();
+    
+    // Check if it's time to send newsletter
+    if (shouldSendNewsletter(lastNewsletterDate, autoNewsletterInterval, now)) {
+        console.log('🕐 Time to send automatic newsletter!');
+        sendAutomaticNewsletter();
+    }
+    
+    // Set up daily check for newsletter sending
+    setInterval(() => {
+        const currentTime = new Date();
+        if (shouldSendNewsletter(lastNewsletterDate, autoNewsletterInterval, currentTime)) {
+            console.log('🕐 Time to send automatic newsletter!');
+            sendAutomaticNewsletter();
+        }
+    }, 24 * 60 * 60 * 1000); // Check every 24 hours
+}
+
+// Check if newsletter should be sent based on interval
+function shouldSendNewsletter(lastDate, interval, currentDate) {
+    if (!lastDate) return true; // First time sending
+    
+    const last = new Date(lastDate);
+    const diffInHours = (currentDate - last) / (1000 * 60 * 60);
+    
+    switch (interval) {
+        case 'daily':
+            return diffInHours >= 24;
+        case 'weekly':
+            return diffInHours >= 168; // 7 days
+        case 'monthly':
+            return diffInHours >= 720; // 30 days
+        default:
+            return false;
+    }
+}
+
+// Send automatic newsletter with latest news
+async function sendAutomaticNewsletter() {
+    try {
+        // Fetch latest news for the newsletter
+        const latestNews = await fetchLatestNewsForNewsletter();
+        
+        const newsletterContent = `
+            <h2>📰 Latest News from Surya's Blog</h2>
+            <p>Here are the latest headlines from our blog:</p>
+            ${latestNews}
+            <p>Stay tuned for more updates!</p>
+        `;
+        
+        await sendNewsletterToSubscribers(newsletterContent);
+        
+        // Update last newsletter date
+        localStorage.setItem('last_newsletter_date', new Date().toISOString());
+        
+        console.log('✅ Automatic newsletter sent successfully!');
+    } catch (error) {
+        console.error('❌ Failed to send automatic newsletter:', error);
+    }
+}
+
+// Fetch latest news for newsletter content
+async function fetchLatestNewsForNewsletter() {
+    try {
+        const articles = await fetchNews('general');
+        const topArticles = articles.slice(0, 5); // Get top 5 articles
+        
+        let newsHTML = '<ul>';
+        topArticles.forEach(article => {
+            newsHTML += `
+                <li>
+                    <strong>${article.title}</strong><br>
+                    <small>${article.description ? article.description.substring(0, 100) + '...' : 'No description available'}</small>
+                </li>
+            `;
+        });
+        newsHTML += '</ul>';
+        
+        return newsHTML;
+    } catch (error) {
+        console.error('Failed to fetch news for newsletter:', error);
+        return '<p>Latest news updates from our blog</p>';
+    }
+}
+
+// Admin functions to control automatic newsletters
+function enableAutomaticNewsletters(interval = 'weekly') {
+    localStorage.setItem('auto_newsletter_enabled', 'true');
+    localStorage.setItem('auto_newsletter_interval', interval);
+    console.log(`✅ Automatic newsletters enabled (${interval})`);
+    
+    // Start the automatic system
+    initAutomaticNewsletters();
+}
+
+function disableAutomaticNewsletters() {
+    localStorage.setItem('auto_newsletter_enabled', 'false');
+    console.log('❌ Automatic newsletters disabled');
+}
+
+function getNewsletterSettings() {
+    return {
+        enabled: localStorage.getItem('auto_newsletter_enabled') === 'true',
+        interval: localStorage.getItem('auto_newsletter_interval') || 'weekly',
+        lastSent: localStorage.getItem('last_newsletter_date'),
+        subscribers: JSON.parse(localStorage.getItem('newsletter_subscribers') || '[]').length
+    };
 }
 
 // Event listeners for category buttons
