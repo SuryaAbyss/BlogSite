@@ -1,8 +1,10 @@
 const API_KEY = '60d5df70a6d768be30695e939e2c581b';
-const CATEGORY = 'general';
-const ENDPOINT = `https://gnews.io/api/v4/top-headlines?category=${CATEGORY}&lang=en&country=us&max=10&apikey=${API_KEY}`;
-
+let currentCategory = 'general';
 const newsList = document.getElementById('news-list');
+
+function getEndpoint(category) {
+    return `https://gnews.io/api/v4/top-headlines?category=${category}&lang=en&country=us&max=10&apikey=${API_KEY}`;
+}
 
 function createNewsCard(article) {
     const card = document.createElement('div');
@@ -43,9 +45,10 @@ function createNewsCard(article) {
     return card;
 }
 
-async function fetchNews() {
+async function fetchNews(category = currentCategory) {
     try {
-        const res = await fetch(ENDPOINT);
+        const endpoint = getEndpoint(category);
+        const res = await fetch(endpoint);
         if (!res.ok) throw new Error('Failed to fetch news');
         const data = await res.json();
         if (!data.articles) throw new Error('API error');
@@ -74,7 +77,43 @@ function showNews(articles) {
     });
 }
 
+function updateActiveButton(selectedCategory) {
+    // Remove active class from all buttons
+    document.querySelectorAll('.category-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Add active class to selected button
+    const activeBtn = document.querySelector(`[data-category="${selectedCategory}"]`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+}
+
+async function loadCategoryNews(category) {
+    currentCategory = category;
+    updateActiveButton(category);
+    showLoader();
+    
+    try {
+        const articles = await fetchNews(category);
+        showNews(articles);
+    } catch (err) {
+        showError('Could not load news. Please try again later.');
+    }
+}
+
+// Event listeners for category buttons
 document.addEventListener('DOMContentLoaded', async () => {
+    // Add click event listeners to category buttons
+    document.querySelectorAll('.category-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const category = btn.getAttribute('data-category');
+            loadCategoryNews(category);
+        });
+    });
+    
+    // Load initial news
     showLoader();
     try {
         const articles = await fetchNews();
