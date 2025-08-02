@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title> News Blog site by (Surya)</title>
     <link rel="stylesheet" href="style.css">
+    <!-- EmailJS for automatic email sending -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
     <!-- Custom Cursor -->
@@ -13,7 +15,7 @@
     
     <header>
         <div class="container">
-            <h1>Surya's News - Blog Site </h1>
+            <h1>Modern News Blog - Surya's Blog</h1>
             <p class="subtitle">Stay updated with the latest headlines</p>
         </div>
     </header>
@@ -39,6 +41,45 @@
         </div>
     </main>
     
+    <!-- Subscription Section -->
+    <section class="subscription-section">
+        <div class="container">
+            <div class="subscription-content">
+                <div class="subscription-text">
+                    <h2 class="subscription-title">Stay Updated!</h2>
+                    <p class="subscription-desc">Subscribe to our newsletter and get the latest news delivered directly to your inbox. Never miss out on important updates!</p>
+                    <div class="subscription-benefits">
+                        <div class="benefit-item">
+                            <span class="benefit-icon">📰</span>
+                            <span>Latest news updates</span>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="benefit-icon">⚡</span>
+                            <span>Breaking stories first</span>
+                        </div>
+                        <div class="benefit-item">
+                            <span class="benefit-icon">🎯</span>
+                            <span>Curated content</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="subscription-form">
+                    <form id="subscribeForm" class="email-form">
+                        <div class="input-group">
+                            <input type="email" id="emailInput" placeholder="Enter your email address" required>
+                            <button type="submit" class="subscribe-btn">
+                                <span class="btn-text">Subscribe</span>
+                                <span class="btn-icon">📧</span>
+                            </button>
+                        </div>
+                        <div class="form-message" id="formMessage"></div>
+                    </form>
+                    <p class="privacy-note">We respect your privacy. Unsubscribe at any time.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
     <!-- Animated Footer -->
     <footer class="animated-footer">
         <div class="container">
@@ -46,6 +87,10 @@
                 <div class="footer-section">
                     <h3 class="glitch-text">News Blog</h3>
                     <p>&copy; 2024 Modern News Blog. Powered by NewsAPI.org</p>
+                    <!-- Admin Newsletter Button (for testing) -->
+                    <button id="sendNewsletterBtn" class="admin-btn" style="display: none;">
+                        📧 Send Newsletter to All Subscribers
+                    </button>
                 </div>
                 <div class="footer-section">
                     <div class="social-links">
@@ -70,4 +115,3 @@
     <script src="script.js"></script>
 </body>
 </html> 
-
