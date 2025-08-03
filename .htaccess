@@ -1,7 +1,7 @@
 RewriteEngine On
 
 # Handle category routes
-RewriteRule ^(general|tech|technology|business|entertainment|sports|science)/?$ index.html [L]
+RewriteRule ^(general|tech|technology|business|entertainment|sports|science|ai|ai-ml|artificial-intelligence|machine-learning)/?$ index.html [L]
 
 # Handle root route
 RewriteRule ^$ index.html [L]
