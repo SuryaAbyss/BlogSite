@@ -2,65 +2,6 @@ const API_KEY = '60d5df70a6d768be30695e939e2c581b';
 let currentCategory = 'general';
 const newsList = document.getElementById('news-list');
 
-// URL Routing System
-const ROUTES = {
-    '/': 'general',
-    '/general': 'general',
-    '/tech': 'technology',
-    '/technology': 'technology',
-    '/business': 'business',
-    '/entertainment': 'entertainment',
-    '/sports': 'sports',
-    '/science': 'science',
-    '/ai': 'ai',
-    '/ai-ml': 'ai',
-    '/artificial-intelligence': 'ai',
-    '/machine-learning': 'ai'
-};
-
-// Initialize URL routing
-function initURLRouting() {
-    // Handle browser back/forward buttons
-    window.addEventListener('popstate', (event) => {
-        const path = window.location.pathname;
-        const category = ROUTES[path] || 'general';
-        loadCategoryNews(category, false); // false = don't update URL
-    });
-    
-    // Handle initial page load
-    const path = window.location.pathname;
-    const category = ROUTES[path] || 'general';
-    currentCategory = category;
-    
-    // Update active button based on URL
-    updateActiveButton(category);
-    
-    // Load news for the category from URL
-    loadCategoryNews(category, false);
-}
-
-// Update URL without triggering navigation
-function updateURL(category) {
-    const path = Object.keys(ROUTES).find(key => ROUTES[key] === category) || '/';
-    const url = window.location.origin + path;
-    
-    // Update URL without reloading the page
-    window.history.pushState({ category }, '', url);
-    
-    // Update page title
-    const categoryNames = {
-        'general': 'General News',
-        'technology': 'Technology News',
-        'business': 'Business News',
-        'entertainment': 'Entertainment News',
-        'sports': 'Sports News',
-        'science': 'Science News',
-        'ai': 'AI & Machine Learning News'
-    };
-    
-    document.title = `${categoryNames[category]} - Surya's News Blog`;
-}
-
 // Initialize EmailJS (you'll need to replace these with your actual EmailJS credentials)
 function initEmailJS() {
     // Replace these with your actual EmailJS credentials
@@ -141,10 +82,6 @@ function clearSubscribers() {
 }
 
 function getEndpoint(category) {
-    // For AI category, we'll use a custom search query since GNews doesn't have a specific AI category
-    if (category === 'ai') {
-        return `https://gnews.io/api/v4/search?q=artificial intelligence OR machine learning OR AI OR deep learning&lang=en&country=us&max=10&apikey=${API_KEY}`;
-    }
     return `https://gnews.io/api/v4/top-headlines?category=${category}&lang=en&country=us&max=10&apikey=${API_KEY}`;
 }
 
@@ -646,50 +583,10 @@ function updateActiveButton(selectedCategory) {
         setTimeout(() => {
             activeBtn.style.transform = '';
         }, 200);
-        
-        // Add URL indicator
-        showURLIndicator(selectedCategory);
-        
-        // Add AI section class for special styling
-        const mainElement = document.querySelector('main');
-        if (selectedCategory === 'ai') {
-            mainElement.classList.add('ai-section');
-        } else {
-            mainElement.classList.remove('ai-section');
-        }
     }
 }
 
-// Show URL change indicator
-function showURLIndicator(category) {
-    const categoryNames = {
-        'general': 'General News',
-        'technology': 'Technology News',
-        'business': 'Business News',
-        'entertainment': 'Entertainment News',
-        'sports': 'Sports News',
-        'science': 'Science News',
-        'ai': 'AI & Machine Learning News'
-    };
-    
-    // Create or update URL indicator
-    let indicator = document.getElementById('url-indicator');
-    if (!indicator) {
-        indicator = document.createElement('div');
-        indicator.id = 'url-indicator';
-        document.body.appendChild(indicator);
-    }
-    
-    indicator.textContent = `📍 ${categoryNames[category]}`;
-    indicator.classList.add('show');
-    
-    // Hide indicator after 3 seconds
-    setTimeout(() => {
-        indicator.classList.remove('show');
-    }, 3000);
-}
-
-async function loadCategoryNews(category, updateURL = true) {
+async function loadCategoryNews(category) {
     currentCategory = category;
     updateActiveButton(category);
     
@@ -702,9 +599,6 @@ async function loadCategoryNews(category, updateURL = true) {
     try {
         const articles = await fetchNews(category);
         showNews(articles);
-        if (updateURL) {
-            updateURL(category);
-        }
     } catch (err) {
         showError('Could not load news. Please try again later.');
     }
@@ -806,7 +700,6 @@ function initAdvancedFeatures() {
     addImageLoadingEffects();
     initAdminButton(); // Initialize admin newsletter button
     initAutomaticNewsletters(); // Initialize automatic newsletter scheduling
-    initURLRouting(); // Initialize URL routing
 }
 
 // Initialize Admin Newsletter Button
@@ -1030,10 +923,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.category-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const category = btn.getAttribute('data-category');
-            loadCategoryNews(category, true); // true = update URL
+            loadCategoryNews(category);
         });
     });
     
-    // URL routing will handle initial news loading
-    // No need to load news here as initURLRouting() will do it
+    // Load initial news
+    showLoader();
+    try {
+        const articles = await fetchNews();
+        showNews(articles);
+    } catch (err) {
+        showError('Could not load news. Please try again later.');
+    }
 }); 
